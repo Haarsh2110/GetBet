@@ -1,0 +1,9 @@
+{
+  "name": "GetBet VIP",
+  "description": "High-performance betting intelligence and VIP dashboard.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

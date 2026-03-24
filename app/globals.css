@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #D4AF37;
+  --color-primary-muted: #B08D26;
+  --color-primary-light: #F9E076;
+  --color-primary-dark: #9e8508;
+  --color-background: #0A0A0A;
+  --color-surface: #151515;
+  --color-surface-hover: #1E1E1E;
+  --color-accent-blue: #0066FF;
+  --color-accent-red: #FF3B30;
+  --color-accent-green: #34C759;
+  --color-accent-gold: #D4AF37;
+
+  --font-inter: var(--font-sans);
+  --font-display: var(--font-display);
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-background text-white antialiased;
+  }
+
+  /* Hide the Next.js Dev Indicator completely */
+  nextjs-portal {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  .glass-gold {
+    @apply bg-primary/10 backdrop-blur-md border border-primary/20;
+  }
+
+  .shadow-gold {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  }
+
+  .shadow-gold-bright {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-light to-primary-muted;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .bg-grid-white {
+    background-size: 30px 30px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.25), 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .shadow-glow-orange {
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.25), 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .scale-98 {
+    transform: scale(0.98);
+  }
+
+  .text-gradient-fire {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-purple {
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    background-size: 200% auto;
+    animation: shimmer 2s linear infinite;
+  }
+}
