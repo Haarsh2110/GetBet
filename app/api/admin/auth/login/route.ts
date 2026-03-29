@@ -8,10 +8,10 @@ export async function POST(req: Request) {
 
         // Hardcoded admin credentials for now
         // In production, this should check the User database model with hashed passwords
-        const validUsername = process.env.ADMIN_USERNAME || 'admin';
-        const validPassword = process.env.ADMIN_PASSWORD || 'getbet@admin2025';
+        const validUsername = process.env.ADMIN_USERNAME;
+        const validPassword = process.env.ADMIN_PASSWORD;
 
-        if (username === validUsername && password === validPassword) {
+        if (username && password && username === validUsername && password === validPassword) {
             const token = await signAuth({ id: 'admin-1', role: 'admin' });
 
             const response = NextResponse.json({ success: true, message: 'Login successful' });

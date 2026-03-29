@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Lock, Mail, ArrowRight, ShieldCheck, Gamepad2 } from 'lucide-react';
+import { APP_CONFIG } from '@/lib/constants';
 
 export default function MasterLogin() {
     const router = useRouter();
@@ -27,7 +28,7 @@ export default function MasterLogin() {
             const data = await res.json();
 
             if (data.success) {
-                router.push('/master');
+                router.push(APP_CONFIG.master.path);
             } else {
                 setError(data.message || 'Access Denied');
             }
@@ -132,7 +133,7 @@ export default function MasterLogin() {
                 <div className="mt-8 text-center flex flex-col gap-4">
                     <p className="text-gray-600 text-[10px] font-black tracking-widest uppercase">Strict Authorized Access Only</p>
                     <a 
-                        href="/admin" 
+                        href={APP_CONFIG.admin.path} 
                         className="inline-flex items-center justify-center gap-2 text-primary/40 hover:text-primary transition-colors text-[9px] font-black uppercase tracking-widest group"
                     >
                         <Gamepad2 size={12} className="group-hover:rotate-12 transition-transform" />

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { APP_CONFIG } from '@/lib/constants';
 
 export default function WinGoControlPage() {
+    const adminPath = APP_CONFIG.admin.path;
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [pushing, setPushing] = useState<string | null>(null);
@@ -282,7 +284,7 @@ export default function WinGoControlPage() {
         <div className="min-h-screen bg-background text-white pb-20">
             {/* Dark Golden Header */}
             <div className="sticky top-0 z-50 px-6 py-6 border-b border-primary/20 flex flex-col items-center justify-center relative bg-surface">
-                <Link href="/admin" className="absolute left-6 text-primary hover:text-white transition-colors">
+                <Link href={adminPath} className="absolute left-6 text-primary hover:text-white transition-colors">
                     <ArrowLeft size={24} />
                 </Link>
                 <h1 className="text-white font-black text-lg tracking-widest uppercase text-center mt-1">WIN GO - 1 MINUTE</h1>
@@ -577,7 +579,7 @@ export default function WinGoControlPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <Link
-                        href="/admin/wingo/result-history"
+                        href={`${adminPath}/wingo/result-history`}
                         className="bg-surface rounded-2xl border border-primary/20 p-5 text-center group hover:scale-[1.02] transition-transform active:scale-95 shadow-lg relative overflow-hidden"
                     >
                         <div className="font-black text-white text-[11px] uppercase tracking-widest mb-6 leading-relaxed relative z-10">
@@ -588,7 +590,7 @@ export default function WinGoControlPage() {
                         </div>
                     </Link>
                     <Link
-                        href="/admin/wingo/prediction-history"
+                        href={`${adminPath}/wingo/prediction-history`}
                         className="bg-surface rounded-2xl border border-primary/20 p-5 text-center group hover:scale-[1.02] transition-transform active:scale-95 shadow-lg relative overflow-hidden"
                     >
                         <div className="font-black text-white text-[11px] uppercase tracking-widest mb-6 leading-relaxed relative z-10">

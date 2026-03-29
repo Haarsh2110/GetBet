@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User, Loader2 } from 'lucide-react';
+import { APP_CONFIG } from '@/lib/constants';
 
 export default function AdminLogin() {
     const [username, setUsername] = useState('');
@@ -25,7 +26,7 @@ export default function AdminLogin() {
             const data = await res.json();
 
             if (data.success) {
-                router.push('/admin');
+                router.push(APP_CONFIG.admin.path);
             } else {
                 setError(data.error || 'Failed to login');
             }

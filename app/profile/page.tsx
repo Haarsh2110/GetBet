@@ -2,20 +2,20 @@
 
 import { useWallet } from '@/hooks/use-wallet';
 import { useState, useEffect } from 'react';
-import { Crown, User, Lock, Bell, ShieldCheck, LogOut, ChevronRight, Diamond, Settings, FileText, HelpCircle, Gift, Star, TrendingUp, Wallet, Pencil, Check, X } from 'lucide-react';
+import { Crown, User, Lock, Bell, ShieldCheck, LogOut, ChevronRight, Diamond, Settings, FileText, HelpCircle, Gift, Star, TrendingUp, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
+import { userService, UserProfile } from '@/services/userService';
 
 const menuItems = [
-  { icon: User, label: 'Account Details', href: '#', color: '#facc15' },
-  { icon: Lock, label: 'Security & Password', href: '#', color: '#3b82f6' },
-  { icon: Bell, label: 'Notification Settings', href: '#', color: '#f97316' },
-  { icon: Gift, label: 'Refer & Earn', href: '#', color: '#22c55e' },
-  { icon: FileText, label: 'Terms & Conditions', href: '#', color: '#8b5cf6' },
-  { icon: ShieldCheck, label: 'Privacy Policy', href: '#', color: '#06b6d4' },
-  { icon: HelpCircle, label: 'Help & FAQ', href: '#', color: '#ec4899' },
+  { icon: User, label: 'Account Details', href: '/profile/account', color: '#facc15' },
+  { icon: Lock, label: 'Security & Password', href: '/profile/security', color: '#3b82f6' },
+  { icon: Bell, label: 'Notification Settings', href: '/profile/notifications', color: '#f97316' },
+  { icon: FileText, label: 'Terms & Conditions', href: '/terms', color: '#8b5cf6' },
+  { icon: ShieldCheck, label: 'Privacy Policy', href: '/privacy', color: '#06b6d4' },
+  { icon: HelpCircle, label: 'Help & FAQ', href: '/support', color: '#ec4899' },
 ];
 
 const stats = [
@@ -24,26 +24,41 @@ const stats = [
   { label: 'Net P&L', value: '+₹24K', icon: Wallet },
 ];
 
+const VIP_PLANS: Record<string, string> = {
+  'none': 'FREE MEMBER',
+  'starter': 'STARTER VIP',
+  'growth': 'GROWTH VIP',
+  'elite': 'ELITE VIP',
+  'PLATINUM VIP': 'PLATINUM VIP' // Keeping for backward compatibility or demo
+};
+
 export default function Profile() {
   const { wallet } = useWallet();
   const router = useRouter();
-  const [userName, setUserName] = useState('GetBet User');
-  const [userPhone, setUserPhone] = useState('');
+  
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const [editMode, setEditMode] = useState(false);
   const [tempName, setTempName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.name) setUserName(u.name);
-        if (u.phone) setUserPhone(u.phone);
+    async function fetchProfile() {
+      setLoading(true);
+      const data = await userService.getProfile();
+      if (data) {
+        setProfile(data);
+      } else {
+        setError('Failed to load profile. Please login again.');
+        router.push('/login');
       }
-    } catch { }
-  }, []);
+      setLoading(false);
+    }
+    fetchProfile();
+  }, [router]);
 
   const handleSaveName = async () => {
     const trimmed = tempName.trim();
@@ -53,38 +68,34 @@ export default function Profile() {
     }
     setSaving(true);
     setSaveError('');
-    try {
-      const res = await fetch('/api/user/update-name', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: userPhone, name: trimmed }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUserName(data.name);
-        // Update localStorage
-        const stored = localStorage.getItem('user');
-        if (stored) {
-          const u = JSON.parse(stored);
-          u.name = data.name;
-          localStorage.setItem('user', JSON.stringify(u));
-        }
-        setEditMode(false);
-      } else {
-        setSaveError(data.error || 'Failed to save');
-      }
-    } catch {
-      setSaveError('Network error. Try again.');
-    } finally {
-      setSaving(false);
+    
+    if (!profile?.phone) return;
+
+    const res = await userService.updateName(profile.phone, trimmed);
+    if (res.success) {
+      setProfile(prev => prev ? ({ ...prev, name: res.name }) : null);
+      setEditMode(false);
+    } else {
+      setSaveError(res.error || 'Failed to save');
     }
+    setSaving(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem('user');
     localStorage.removeItem('wallet');
+    await userService.logout();
     router.push('/login');
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-[100dvh] bg-[#0A0A0A] items-center justify-center">
+        <Loader2 className="text-[#D4AF37] animate-spin" size={40} />
+        <p className="text-gray-500 text-xs mt-4 tracking-widest uppercase">Loading Profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-[#0A0A0A] overflow-hidden">
@@ -152,19 +163,21 @@ export default function Profile() {
             </div>
           ) : (
             <button
-              onClick={() => { setTempName(userName); setEditMode(true); }}
+              onClick={() => { setTempName(profile?.name || ''); setEditMode(true); }}
               className="flex items-center gap-2 group"
             >
-              <h1 className="text-xl font-black text-white">{userName}</h1>
+              <h1 className="text-xl font-black text-white">{profile?.name || 'User'}</h1>
               <Pencil size={13} className="text-gray-600 group-hover:text-[#D4AF37] transition-colors" />
             </button>
           )}
-          <p className="text-gray-500 text-xs tracking-widest uppercase mt-0.5">{userPhone ? `+91 ${userPhone}` : 'GetBet VIP Member'}</p>
+          <p className="text-gray-500 text-xs tracking-widest uppercase mt-0.5">{profile?.phone ? `+91 ${profile.phone}` : 'GetBet VIP Member'}</p>
 
           {/* VIP Badge */}
           <div className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10">
             <Diamond size={12} className="text-[#D4AF37]" />
-            <span className="text-[#D4AF37] text-xs font-black tracking-widest uppercase">Platinum VIP</span>
+            <span className="text-[#D4AF37] text-xs font-black tracking-widest uppercase">
+              {VIP_PLANS[profile?.vipPlan || 'none']}
+            </span>
           </div>
         </motion.div>
 
@@ -196,7 +209,7 @@ export default function Profile() {
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
             <div className="relative z-10">
               <p className="text-black/70 text-[9px] font-black uppercase tracking-widest mb-1">Membership Status</p>
-              <p className="text-black text-2xl font-black">PLATINUM VIP</p>
+              <p className="text-black text-2xl font-black">{VIP_PLANS[profile?.vipPlan || 'none']}</p>
               <p className="text-black/60 text-[10px] font-bold mt-1">Tier 1 • All Benefits Unlocked</p>
             </div>
             <div className="relative z-10 flex flex-col items-end gap-2">
@@ -217,29 +230,30 @@ export default function Profile() {
         {/* Menu Items */}
         <div className="mx-5 flex flex-col gap-2 mb-5">
           {menuItems.map((item, i) => (
-            <motion.button
-              key={item.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + i * 0.04 }}
-              className="flex items-center justify-between p-4 rounded-2xl bg-[#111111] border border-white/5 active:scale-[0.99] transition-all hover:border-white/10"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: item.color + '15', border: `1px solid ${item.color}30` }}>
-                  <item.icon size={16} style={{ color: item.color }} />
+            <Link key={item.label} href={item.href}>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.04 }}
+                className="flex items-center justify-between p-4 rounded-2xl bg-[#111111] border border-white/5 active:scale-[0.99] transition-all hover:border-white/10 cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: item.color + '15', border: `1px solid ${item.color}30` }}>
+                    <item.icon size={16} style={{ color: item.color }} />
+                  </div>
+                  <span className="text-gray-200 text-sm font-semibold">{item.label}</span>
                 </div>
-                <span className="text-gray-200 text-sm font-semibold">{item.label}</span>
-              </div>
-              <ChevronRight size={16} className="text-gray-600" />
-            </motion.button>
+                <ChevronRight size={16} className="text-gray-600" />
+              </motion.div>
+            </Link>
           ))}
         </div>
 
         {/* Logout */}
-        <div className="mx-5 mb-4">
+        <div className="mx-5 mb-10">
           <button
             onClick={handleLogout}
-            className="w-full py-3.5 rounded-2xl border border-red-500/20 bg-red-500/5 flex items-center justify-center gap-2 text-red-400 font-black text-sm uppercase tracking-wider active:scale-[0.98] transition-transform hover:bg-red-500/10 hover:border-red-500/40 transition-all"
+            className="w-full py-3.5 rounded-2xl border border-red-500/20 bg-red-500/5 flex items-center justify-center gap-2 text-red-400 font-black text-sm uppercase tracking-wider active:scale-[0.98] transition-all hover:bg-red-500/10 hover:border-red-500/40"
           >
             <LogOut size={16} />
             Logout

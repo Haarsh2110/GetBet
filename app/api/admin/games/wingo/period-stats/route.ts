@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
         const { processWingoPeriod } = await import('@/lib/wingo-engine');
         
-        let stats = await WingoPeriod.findOne({ period }).lean();
+        let stats: any = await WingoPeriod.findOne({ period }).lean();
 
         // 1. Ensure current and past 10 periods are processed (Catch-Up/Gap-Fill)
         // This ensures no periods are missed even if the dashboard was closed or throttled

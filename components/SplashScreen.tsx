@@ -9,12 +9,6 @@ export default function SplashScreen() {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        const hasShown = sessionStorage.getItem('splash_shown');
-        if (hasShown) {
-            setShow(false);
-            return;
-        }
-
         setShow(true);
         // Simulate loading progress
         const duration = 400; // Reduced from 2500 for faster load
@@ -28,7 +22,6 @@ export default function SplashScreen() {
 
             if (currentStep >= steps) {
                 clearInterval(timer);
-                sessionStorage.setItem('splash_shown', 'true');
                 setTimeout(() => setShow(false), 200); // Small delay before animating out
             }
         }, intervalTime);

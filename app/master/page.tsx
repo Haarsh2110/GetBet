@@ -15,6 +15,7 @@ import {
     Clock,
     CheckCircle2
 } from 'lucide-react';
+import { APP_CONFIG } from '@/lib/constants';
 
 interface Stats {
     totalUsers: number;
@@ -29,6 +30,7 @@ interface Stats {
 }
 
 export default function MasterDashboard() {
+    const masterPath = APP_CONFIG.master.path;
     const router = useRouter();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -143,7 +145,7 @@ export default function MasterDashboard() {
                     </h2>
 
                     <div className="space-y-6">
-                        <button onClick={() => router.push('/master/users')} className="w-full p-8 rounded-[40px] bg-white/5 border border-white/5 hover:border-primary transition group/btn text-left relative overflow-hidden">
+                        <button onClick={() => router.push(`${masterPath}/users`)} className="w-full p-8 rounded-[40px] bg-white/5 border border-white/5 hover:border-primary transition group/btn text-left relative overflow-hidden">
                              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/btn:scale-125 transition duration-700">
                                 <Users size={120} className="text-primary rotate-12" />
                             </div>
@@ -154,7 +156,7 @@ export default function MasterDashboard() {
                             </div>
                         </button>
 
-                        <button onClick={() => router.push('/master/settings')} className="w-full p-8 rounded-[40px] bg-white/5 border border-white/5 hover:border-red-500 transition group/btn text-left relative overflow-hidden">
+                        <button onClick={() => router.push(`${masterPath}/settings`)} className="w-full p-8 rounded-[40px] bg-white/5 border border-white/5 hover:border-red-500 transition group/btn text-left relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/btn:scale-125 transition duration-700">
                                 <Lock size={120} className="text-red-500 -rotate-12" />
                             </div>

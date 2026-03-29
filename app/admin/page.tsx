@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Home, LayoutDashboard, User } from 'lucide-react';
+import { APP_CONFIG } from '@/lib/constants';
 
 const apps = [
     { id: 'wingo', name: 'WIN GO', color: 'from-[#e8701a] to-[#d35b0d]', icon: '/wingo.png' },
@@ -11,6 +12,7 @@ const apps = [
 ];
 
 export default function AdminHome() {
+    const adminPath = APP_CONFIG.admin.path;
     const [data, setData] = useState({
         totalOrders: 0,
         completedOrders: 0,
@@ -91,7 +93,7 @@ export default function AdminHome() {
                             return (
                                 <Link
                                     key={app.id}
-                                    href={`/admin/wingo`}
+                                    href={`${adminPath}/wingo`}
                                     className={`
                                         relative overflow-hidden rounded-xl aspect-square flex flex-col items-center justify-center p-3 cursor-pointer
                                         bg-gradient-to-br ${app.color} shadow-lg active:scale-95 transition-transform duration-200 border border-white/10
@@ -162,7 +164,7 @@ export default function AdminHome() {
                     {/* Arrow to Orders */}
                     <div className="flex justify-center mt-6">
                         <Link
-                            href="/admin/orders"
+                            href={`${adminPath}/orders`}
                             className="w-14 h-14 bg-gradient-to-r from-primary to-primary-muted rounded-full flex items-center justify-center shadow-gold hover:scale-105 transition-transform active:scale-95"
                         >
                             <ArrowRight size={24} className="text-black" />

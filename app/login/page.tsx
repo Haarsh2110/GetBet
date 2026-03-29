@@ -3,26 +3,96 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Phone, ArrowRight, ShieldCheck, CheckCircle2, Zap } from 'lucide-react';
+import { Phone, Lock, ShieldCheck, Zap, ArrowRight, UserPlus, LogIn, Gift, Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
+export default function AuthPage() {
     const router = useRouter();
-    const [phone, setPhone] = useState('');
-    const [step, setStep] = useState(1); // 1: Phone, 2: OTP
-    const [otp, setOtp] = useState(['', '', '', '']);
-    const [generatedOtp, setGeneratedOtp] = useState('');
+    const [mode, setMode] = useState<'login' | 'register'>('login');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [step, setStep] = useState(1); // For register: 1 = Phone/OTP, 2 = Password/Details
 
-    // Generate random OTP when moving to step 2
-    const handleSendOtp = () => {
+    // Form states
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [inviteCode, setInviteCode] = useState('');
+    const [generatedOtp, setGeneratedOtp] = useState('');
+    const [agreed, setAgreed] = useState(true);
+
+    // Handle Tab Switch
+    const handleModeSwitch = (newMode: 'login' | 'register') => {
+        setMode(newMode);
+        setStep(1);
+        setPassword('');
+        setConfirmPassword('');
+        setInviteCode('');
+        setOtp(['', '', '', '', '', '']);
+    };
+
+    // OTP Logic (Shared)
+    const handleSendOtp = async () => {
         if (phone.length < 10) return;
         setLoading(true);
-        setTimeout(() => {
-            const code = Math.floor(1000 + Math.random() * 9000).toString();
-            setGeneratedOtp(code);
-            setStep(2);
+        try {
+            const res = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (data.otp) setGeneratedOtp(data.otp);
+                setStep(2); 
+            } else {
+                alert(data.error || 'Failed to send OTP');
+            }
+        } catch (err) {
+            alert('Connection failed');
+        } finally {
             setLoading(false);
-        }, 800);
+        }
+    };
+
+    // Main Auth Call
+    const handleSubmit = async () => {
+        if (mode === 'register') {
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            if (!agreed) {
+                alert('Please agree to privacy policy');
+                return;
+            }
+        }
+
+        setLoading(true);
+        const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+        const payload = mode === 'login' 
+            ? { phone, password } 
+            : { phone, password, otp: otp.join(''), inviteCode };
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                router.push('/');
+                router.refresh();
+            } else {
+                alert(data.error || 'Authentication failed');
+            }
+        } catch (err) {
+            alert('Request failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleOtpChange = (index: number, value: string) => {
@@ -30,174 +100,222 @@ export default function LoginPage() {
         const newOtp = [...otp];
         newOtp[index] = value.slice(-1);
         setOtp(newOtp);
-
-        // Auto focus next
-        if (value && index < 3) {
+        if (value && index < 5) {
             const nextInput = document.getElementById(`otp-${index + 1}`);
             nextInput?.focus();
         }
     };
 
-    const handleVerify = async () => {
-        const entered = otp.join('');
-        if (entered !== generatedOtp) {
-            alert('Invalid OTP! Please check the code on your screen.');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone }),
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                // Save to localStorage for the session
-                localStorage.setItem('user', JSON.stringify(data.user));
-                router.push('/');
-            }
-        } catch (err) {
-            alert('Login failed. Check your connection.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-[#0A0A0A] items-center justify-center px-6 relative overflow-hidden">
+        <div className="flex flex-col min-h-[100dvh] bg-[#050505] items-center justify-center px-4 relative overflow-hidden font-sans">
             {/* Background elements */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/10 blur-[100px] rounded-full" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-primary/5 blur-[80px] rounded-full" />
+            <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-primary/20 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full" />
 
-            {/* Logo Section */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-12 text-center"
+            {/* Logo */}
+            <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="mb-8 text-center z-10"
             >
-                <div className="w-20 h-20 bg-primary/10 border border-primary/20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 shadow-gold">
-                    <Zap size={36} className="text-primary fill-primary" />
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/30 to-black border border-primary/40 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-[0_0_40px_rgba(255,215,0,0.1)]">
+                    <Zap size={28} className="text-primary fill-primary/30" />
                 </div>
-                <h1 className="text-4xl font-black italic tracking-tighter text-gradient-gold">
+                <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-primary/80">
                     GET<span className="text-white">BET</span>
                 </h1>
-                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em] mt-2">VIP Intelligence Terminal</p>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.4em] mt-2">Professional Game Terminal</p>
             </motion.div>
 
-            {/* Main Card */}
-            <div className="w-full max-w-sm glass-dark rounded-[3rem] p-8 border border-white/5 relative overflow-hidden">
-                <AnimatePresence mode="wait">
-                    {step === 1 ? (
+            {/* Main Auth Container */}
+            <div className="w-full max-w-sm z-10">
+                {/* Tab Switcher */}
+                <div className="bg-white/5 p-1.5 rounded-[1.5rem] flex mb-6 border border-white/5 backdrop-blur-xl">
+                    <button 
+                        onClick={() => handleModeSwitch('login')}
+                        className={`flex-1 py-3 rounded-[1.2rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mode === 'login' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+                    >
+                        <LogIn size={12} strokeWidth={3} />
+                        Login
+                    </button>
+                    <button 
+                        onClick={() => handleModeSwitch('register')}
+                        className={`flex-1 py-3 rounded-[1.2rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mode === 'register' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+                    >
+                        <UserPlus size={12} strokeWidth={3} />
+                        Register
+                    </button>
+                </div>
+
+                {/* Form Card */}
+                <div className="glass-dark rounded-[2.5rem] p-6 border border-white/5 shadow-2xl flex flex-col min-h-[460px]">
+                    <AnimatePresence mode="wait">
                         <motion.div
-                            key="phone-step"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
+                            key={`${mode}-${step}`}
+                            initial={{ x: 10, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -10, opacity: 0 }}
+                            className="space-y-5"
                         >
-                            <div className="text-center space-y-2">
-                                <h2 className="text-xl font-black text-white">Welcome Back</h2>
-                                <p className="text-gray-500 text-xs">Enter your phone number to continue</p>
+                            <div className="text-center mb-1">
+                                <h2 className="text-xl font-black text-white">
+                                    {mode === 'login' ? 'Welcome Back' : (step === 1 ? 'Verify Number' : 'Set Account')}
+                                </h2>
+                                <p className="text-white/40 text-[10px] mt-1 font-bold uppercase tracking-wider">
+                                    {mode === 'login' ? 'Vip access portal' : 'Security registration'}
+                                </p>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="bg-white/5 border border-white/10 rounded-2xl flex items-center px-4 py-4 gap-3 focus-within:border-primary/50 transition-all">
-                                    <Phone size={18} className="text-gray-500" />
-                                    <span className="text-gray-400 font-bold border-r border-white/10 pr-3">+91</span>
-                                    <input
-                                        type="tel"
-                                        placeholder="Phone Number"
-                                        maxLength={10}
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="bg-transparent border-none outline-none text-white font-bold w-full p-0 placeholder-gray-600 focus:ring-0"
-                                    />
-                                </div>
-                                <button
-                                    onClick={handleSendOtp}
-                                    disabled={phone.length < 10 || loading}
-                                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${phone.length === 10
-                                        ? 'bg-primary text-black shadow-gold'
-                                        : 'bg-white/5 text-gray-600 border border-white/5'
-                                        }`}
-                                >
-                                    {loading ? 'Processing...' : 'Secure Login'}
-                                    <ArrowRight size={16} strokeWidth={3} />
-                                </button>
+                            <div className="space-y-3.5">
+                                {(mode === 'login' || (mode === 'register' && step === 1)) && (
+                                    <div className="bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center px-4 py-3.5 gap-3 focus-within:border-primary/50 transition-all">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                            <Phone size={14} className="text-primary" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-black text-xs">+91</span>
+                                                <input 
+                                                    type="tel"
+                                                    placeholder="000 000 0000"
+                                                    maxLength={10}
+                                                    value={phone}
+                                                    onChange={(e) => setPhone(e.target.value)}
+                                                    className="bg-transparent border-none outline-none text-white font-black w-full p-0 text-base placeholder-white/10"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {mode === 'login' && (
+                                    <div className="bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center px-4 py-3.5 gap-3 focus-within:border-primary/50 transition-all">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                            <Lock size={14} className="text-primary" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <input 
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="Enter Password"
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                className="bg-transparent border-none outline-none text-white font-black w-full p-0 text-base placeholder-white/10"
+                                            />
+                                        </div>
+                                        <button onClick={() => setShowPassword(!showPassword)} className="text-white/20 hover:text-primary transition">
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {mode === 'register' && step === 1 && (
+                                    <button 
+                                        onClick={handleSendOtp}
+                                        disabled={loading || phone.length < 10}
+                                        className="w-full py-4 rounded-[1.2rem] bg-white text-black font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
+                                    >
+                                        {loading ? 'Sending...' : 'Send Verification OTP'}
+                                        <ArrowRight size={14} strokeWidth={3} />
+                                    </button>
+                                )}
+
+                                {mode === 'register' && step === 2 && (
+                                    <div className="space-y-3.5">
+                                        <div className="flex justify-between gap-1.5 mb-2">
+                                            {otp.map((d, i) => (
+                                                <input 
+                                                    key={i} id={`otp-${i}`}
+                                                    type="text" maxLength={1} value={d}
+                                                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                                                    className="w-9 h-11 bg-white/5 border border-white/10 rounded-lg text-center text-base font-black text-primary focus:border-primary outline-none"
+                                                />
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <div className="bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center px-4 py-3 gap-3">
+                                                <Lock size={14} className="text-primary/70" />
+                                                <input 
+                                                    type="password" placeholder="Set Password"
+                                                    value={password} onChange={(e) => setPassword(e.target.value)}
+                                                    className="bg-transparent border-none outline-none text-white font-bold w-full text-sm"
+                                                />
+                                            </div>
+                                            <div className="bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center px-4 py-3 gap-3">
+                                                <ShieldCheck size={14} className="text-primary/70" />
+                                                <input 
+                                                    type="password" placeholder="Confirm Password"
+                                                    value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    className="bg-transparent border-none outline-none text-white font-bold w-full text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center px-4 py-3 gap-3">
+                                            <Gift size={14} className="text-primary/70" />
+                                            <input 
+                                                type="text" placeholder="Invite Code (Optional)"
+                                                value={inviteCode} onChange={(e) => setInviteCode(e.target.value)}
+                                                className="bg-transparent border-none outline-none text-white font-bold w-full text-sm uppercase"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center gap-2 px-1">
+                                            <input 
+                                                type="checkbox" 
+                                                id="terms" 
+                                                checked={agreed}
+                                                onChange={(e) => setAgreed(e.target.checked)}
+                                                className="w-4 h-4 rounded-md accent-primary"
+                                            />
+                                            <label htmlFor="terms" className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
+                                                I agree to <span className="text-primary/60">Privacy Policy</span>
+                                            </label>
+                                        </div>
+
+                                        <button 
+                                            onClick={handleSubmit}
+                                            disabled={loading || otp.includes('') || !password || !confirmPassword}
+                                            className="w-full py-4 rounded-[1.2rem] bg-white text-black font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
+                                        >
+                                            {loading ? 'Creating Account...' : 'Complete Registration'}
+                                            <UserPlus size={14} strokeWidth={3} />
+                                        </button>
+                                        
+                                        <button onClick={() => setStep(1)} className="w-full text-[9px] text-white/20 font-black uppercase tracking-widest text-center mt-2">
+                                            Change Phone Number
+                                        </button>
+                                    </div>
+                                )}
+
+                                {mode === 'login' && (
+                                    <button 
+                                        onClick={handleSubmit}
+                                        disabled={loading || phone.length < 10 || !password}
+                                        className="w-full py-4 rounded-[1.2rem] bg-white text-black font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl hover:bg-primary transition-colors active:scale-[0.98]"
+                                    >
+                                        {loading ? 'Accessing...' : 'Secure Access'}
+                                        <LogIn size={14} strokeWidth={3} />
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
-                    ) : (
-                        <motion.div
-                            key="otp-step"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
-                        >
-                            <div className="text-center space-y-2">
-                                <h2 className="text-xl font-black text-white">Verify Identity</h2>
-                                <p className="text-gray-500 text-xs">Security code sent to +91 {phone}</p>
-                            </div>
-
-                            {/* Code Inputs */}
-                            <div className="flex justify-between gap-3 my-8">
-                                {otp.map((digit, i) => (
-                                    <input
-                                        key={i}
-                                        id={`otp-${i}`}
-                                        type="text"
-                                        maxLength={1}
-                                        value={digit}
-                                        onChange={(e) => handleOtpChange(i, e.target.value)}
-                                        className="w-14 h-16 bg-white/5 border border-white/10 rounded-2xl text-center text-2xl font-black text-primary focus:border-primary focus:bg-primary/5 outline-none transition-all"
-                                    />
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={handleVerify}
-                                disabled={otp.some(d => !d) || loading}
-                                className="w-full py-4 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all"
-                            >
-                                {loading ? 'Verifying...' : 'Verify & Continue'}
-                                <ShieldCheck size={18} strokeWidth={2.5} />
-                            </button>
-
-                            <button onClick={() => setStep(1)} className="w-full text-center text-[10px] text-gray-600 font-bold uppercase tracking-widest hover:text-gray-400 transition">
-                                Change Number
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                    </AnimatePresence>
+                </div>
             </div>
 
-            {/* OTP Alert (The "Magic" Box) */}
+            {/* OTP Alert (Dev mode) */}
             <AnimatePresence>
-                {step === 2 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="fixed bottom-24 px-6 py-4 bg-[#1a1a1a] border border-primary/30 rounded-3xl flex items-center gap-4 shadow-2xl z-50 animate-float"
-                    >
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Zap size={20} className="text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Your Private OTP</p>
-                            <p className="text-xl font-black text-white tracking-[0.4em]">{generatedOtp}</p>
-                        </div>
-                        <div className="ml-4 pl-4 border-l border-white/10">
-                            <CheckCircle2 size={24} className="text-green-500" />
-                        </div>
+                {generatedOtp && mode === 'register' && step === 2 && (
+                    <motion.div initial={{ y: 50 }} animate={{ y: 0 }} className="fixed bottom-24 p-4 bg-[#111] border border-primary/30 rounded-[1.5rem] flex items-center gap-4 shadow-2xl z-50">
+                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Zap size={16} className="text-primary" /></div>
+                         <div><p className="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Dev OTP Code</p><p className="text-lg font-black text-white tracking-[0.3em]">{generatedOtp}</p></div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <p className="mt-8 text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                Protected by <span className="text-gray-400">GetBet Shield</span>
+            <p className="mt-12 text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">
+                Encrypted by <span className="text-white/30">X-SHIELD KERNEL</span>
             </p>
         </div>
     );
