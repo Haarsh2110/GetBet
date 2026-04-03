@@ -13,11 +13,19 @@ export interface IUser extends Document {
     reverseBalance: number;
     vipBalance: number;
     estimatedBet: number;
-    vipPlan: 'none' | 'starter' | 'growth' | 'elite';
+    vipPlan: 'none' | 'starter' | 'growth' | 'elite' | 'basic';
     vipExpiresAt?: Date;
     status: 'active' | 'suspended' | 'banned';
     role: 'user' | 'admin' | 'superadmin';
     groups: string[];
+    avatar?: string;         // profile picture URL or small Base64
+    bankDetails?: {
+        accountHolderName?: string;
+        bankName?: string;
+        accountNumber?: string;
+        ifscCode?: string;
+        upiId?: string;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -36,11 +44,19 @@ const UserSchema = new Schema<IUser>(
         reverseBalance: { type: Number, default: 0 },
         vipBalance: { type: Number, default: 0 },
         estimatedBet: { type: Number, default: 0 },
-        vipPlan: { type: String, enum: ['none', 'starter', 'growth', 'elite'], default: 'none' },
+        vipPlan: { type: String, enum: ['none', 'starter', 'growth', 'elite', 'basic'], default: 'none' },
         vipExpiresAt: { type: Date },
         status: { type: String, enum: ['active', 'suspended', 'banned'], default: 'active' },
         role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
         groups: [{ type: String }],
+        avatar: { type: String },
+        bankDetails: {
+            accountHolderName: { type: String },
+            bankName: { type: String },
+            accountNumber: { type: String },
+            ifscCode: { type: String },
+            upiId: { type: String },
+        },
     },
     { timestamps: true }
 );

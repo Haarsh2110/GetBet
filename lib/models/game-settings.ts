@@ -10,6 +10,7 @@ export interface IGameSettings extends Document {
     showUpcomingToUsers: boolean;
     upcomingPeriod: number;
     lastResetDate: string; // Date string "YYYY-MM-DD" for reset comparison
+    maintenanceMode: boolean;
 }
 
 const GameSettingsSchema = new Schema<IGameSettings>(
@@ -22,7 +23,8 @@ const GameSettingsSchema = new Schema<IGameSettings>(
         sessionActive: { type: Boolean, default: false },
         showUpcomingToUsers: { type: Boolean, default: false },
         upcomingPeriod: { type: Number, default: 1000667 },
-        lastResetDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+        lastResetDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
+        maintenanceMode: { type: Boolean, default: false }
     },
     { timestamps: true }
 );
